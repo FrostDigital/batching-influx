@@ -1,0 +1,22 @@
+{
+	"name": "batching-influx",
+	"version": "0.0.1",
+	"description": "Adds batch/cache to influx client",
+	"main": "index.js",
+	"scripts": {
+		"test": "node ./spec/support/jasmine-runner.js"
+	},
+	"author": "joel@frostdigital.se",
+	"license": "MIT",
+	"dependencies": {
+		"influx": "^5.0.7",
+		"ms": "^2.1.1"
+	},
+	"devDependencies": {
+		"jasmine": "^2.8.0",
+		"jasmine-spec-reporter": "^4.2.1",
+		"nats-server-control": "0.0.1",
+		"request": "^2.83.0",
+		"request-promise": "^4.2.2"
+	}
+}
