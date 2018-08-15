@@ -1,5 +1,4 @@
 const BatchingInflux = require("../lib/BatchingInflux");
-const MockInflux = require("./support/MockInflux");
 
 describe("BatchingInflux", () => {
 	describe("with mocked influx", () => {
@@ -17,19 +16,18 @@ describe("BatchingInflux", () => {
 				}
 			).startPeriodicalWrites();
 
-			// @ts-ignore
-			batchingInflux.influx = new MockInflux();
+			batchingInflux = mockInflux(batchingInflux);
 		});
 
 		it("should write points on a given interval", async done => {
 			batchingInflux.addPoint(fakePoint);
 
-			expect(batchingInflux.influx.writtenPoints.length).toBe(0, "points should not have been written yet");
+			expect(batchingInflux.writtenPoints.length).toBe(0, "points should not have been written yet");
 
 			// Wait until interval kicks in
 			await wait(writeInterval + 1);
 
-			expect(batchingInflux.influx.writtenPoints.length).toBe(1, "should have been written in batch every X ms");
+			expect(batchingInflux.writtenPoints.length).toBe(1, "should have been written in batch every X ms");
 			expect(batchingInflux.currentBatch.length).toBe(0, "should empty cached points after write");
 
 			done();
@@ -37,7 +35,7 @@ describe("BatchingInflux", () => {
 
 		it("should abort writes if failed more than maxFailedAttempts", async done => {
 			// Mock failed write
-			batchingInflux.influx.addOnWritePointsCallback(() => {
+			batchingInflux.onWritePoints(() => {
 				throw "A mock failure";
 			});
 
@@ -119,3 +117,27 @@ const fakePoint = {
 		aField: "aField"
 	}
 };
+
+/**
+ * Override methods on influx client to avoid that is actually makes a
+ * call to real database.
+ *
+ * @param {Object} influx
+ */
+function mockInflux(influx) {
+	influx.writtenPoints = [];
+
+	influx.writePoints = points => {
+		if (influx.onWritePointsCallback) {
+			influx.onWritePointsCallback();
+		}
+
+		influx.writtenPoints = influx.writtenPoints.concat(points);
+	};
+
+	influx.onWritePoints = fn => {
+		influx.onWritePointsCallback = fn;
+	};
+
+	return influx;
+}
